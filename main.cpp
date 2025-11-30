@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <map>
+#include <set>
 
 #include "day_defs.hpp"
 
@@ -14,7 +15,7 @@ int benchEverything();
 
 int main(int argc, char** argv) {
     if (argc < 3) {
-        std::cout << "Require input: [rootFolder] [solve|bench|bench_all] [dayNumber] (bench_sample_size)\n";
+        std::cout << "Require input: [solve|bench|bench_all] [dayNumber] (bench_sample_size)\n";
         return static_cast<int>(ExitCodes::NO_INPUT);
     }
 
@@ -24,7 +25,9 @@ int main(int argc, char** argv) {
     if (mode == "bench_all") {
         std::cout << "bench all call.\n";
         return benchEverything();
-    } else if (argc < 4) {
+    }
+
+    if (argc < 4) {
         std::cout << "Require day number (int)\n";
         return static_cast<int>(ExitCodes::NO_INPUT);
     }
@@ -62,19 +65,6 @@ int benchEverything() {
 
     static const std::map<int, int> sampleSizeOverrides {
         // {3, 1000}, // example: hardcoded adjusted sampling for if your solution would be too slow with the default.
-        { 5, 2500 },
-        { 6, 1000 },
-        { 7, 2500 },
-        { 9, 1000 },
-        { 11, 500 },
-        { 12, 1000 },
-        { 13, 25 }, // that text file to Z3 is a killer.
-        { 16, 1000 },
-        { 18, 25 }, // part 2 is insanely slow. I am surprised by this, even though we brute force on the list, the grid is just 71x71, and the falling sim is in parse, not here.
-        { 19, 1000 },
-        { 20, 100 },
-        { 22, 5 },
-        { 23, 5 },
     };
     auto getSampleSize = [defaultSampleSize](int day){
         auto iter =
