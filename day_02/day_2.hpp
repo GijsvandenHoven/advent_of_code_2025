@@ -76,8 +76,6 @@ CLASS_DEF(DAY) {
         {
             if (magnitude % divider != 0) continue;
 
-            // std::cout << val << " can be split up in " << divider << " groups.\n";
-
             auto separator = static_cast<int64_t>(std::pow(10,  (magnitude / divider)));
             int64_t working_with = val;
 
@@ -90,8 +88,6 @@ CLASS_DEF(DAY) {
                 int64_t right = working_with % separator;
                 working_with /= separator;
                 int64_t left = working_with % separator;
-
-                // std::cout << "\tcmp " << left << ", " << right << "\n";
 
                 if (right != left)
                 {
@@ -147,17 +143,33 @@ CLASS_DEF(DAY) {
     }
 
     void v1() const override {
+        // multithreading this is so overkill, the no-hread solution with std::accumulate took like 170ms for part 2. But it's easy! and faster!
 
-        // todo: each range could get a thread if this is too slow...
-        auto adder = [](int64_t acc, const Range& r) { return acc + get_repeating_score_of_range(r); };
-        int64_t sum_of_repeated_digits = std::accumulate(ranges.begin(), ranges.end(), 0ll, adder);
+        int64_t sum_of_repeated_digits = 0;
+#pragma omp parallel for default(none) shared(sum_of_repeated_digits) schedule(dynamic)
+        for (size_t i = 0; i < ranges.size(); ++i)
+        {
+            int64_t result = get_repeating_score_of_range(ranges[i]);
+#pragma omp critical
+            {
+                sum_of_repeated_digits += result;
+            }
+        }
 
         reportSolution(sum_of_repeated_digits);
     }
 
     void v2() const override {
-        auto adder = [](int64_t acc, const Range& r) { return acc + get_repeating_score_of_range(r, true); };
-        int64_t sum_of_repeated_digits = std::accumulate(ranges.begin(), ranges.end(), 0ll, adder);
+        int64_t sum_of_repeated_digits = 0;
+#pragma omp parallel for default(none) shared(sum_of_repeated_digits) schedule(dynamic)
+        for (size_t i = 0; i < ranges.size(); ++i)
+        {
+            int64_t result = get_repeating_score_of_range(ranges[i], true);
+#pragma omp critical
+            {
+                sum_of_repeated_digits += result;
+            }
+        }
 
         reportSolution(sum_of_repeated_digits);
     }
