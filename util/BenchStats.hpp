@@ -116,7 +116,7 @@ private:
         double time_units = static_cast<double>(value.count()) / static_cast<double>(unit.count());
 
         std::string unit_of_time;
-        const char* time_suffixes[4] = { "s", "ms", "μs", "ns" }; // "μs"; // <<- encoding issue
+        const char* time_suffixes[4] = { "s", "ms", "μs", "ns" };
         int unit_index;
         if (unit / std::chrono::seconds{1} != 0) {
             unit_index = 0;
