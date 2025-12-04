@@ -111,7 +111,7 @@ CLASS_DEF(DAY) {
     }
 
     void parseBenchReset() override {
-        // none
+        items.clear();
     }
 
     private:
