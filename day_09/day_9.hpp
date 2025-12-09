@@ -68,10 +68,10 @@ CLASS_DEF(DAY) {
     // Fun fact! This will false positive on shapes outside the hull too, as long as the rectangle is not intersected.
     // One way to have this is a shape where the rectangle's opposing corners are the points, and one of the rectangle's third corner is an inner corner of the hull.
     // Analysis on the input (Sinusoid Y delta) shows that this is not a problem for the puzzle. It is shaped like an approximated circle with fuzzy/jittery edges.
-    // Therefore, I never bothered to add code to deal with this. It is possible to detect this case, though:
-    // Just inspect the points of the other pair of opposing corners of the rectangle to both exist within the shape.
-    //     One way to do this that I can think of (laborious) is sorting the vertical edges,
-    //     then casting a horizontal ray from (lowest X in polygon - 1) to (point X) while using flow-fill logic: flip when edge encountered & special handling for corners.
+    // Therefore, I never bothered to add code to deal with this. It is possible to (laboriously) detect this case, though:
+    //     For the four lines of the rectangle, cast a ray from (lowest X / lowest Y) until (end of that axis for the rectangle).
+    //     Use flow-fill like logic to see if the region/line piece of the rectangle is ever not in the shape. Sort the line pieces of the opposing axis for this check.
+    //     As usual with flow-fill, special (annoying!) handling would also be needed for corners.
     //     Creating a JIRA ticket for this and estimating it and implementing it is left as an exercise for the reader.
     bool rectangle_in_hull (const Point& p1, const Point& p2) const
     {
