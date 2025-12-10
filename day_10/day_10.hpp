@@ -25,40 +25,6 @@ struct Machine
             out_states.insert(given_state ^ state);
         });
     }
-
-    void get_possible_joltages(const std::vector<int>& given_joltage, std::vector<std::vector<int>>& new_joltage) const
-    {
-        new_joltage.clear();
-
-        std::ranges::for_each(togglers, [this, &new_joltage, &given_joltage](int button)
-        {
-
-            auto copy_to_modify = given_joltage;
-
-            for (int i = 0; i < copy_to_modify.size(); ++i)
-            {
-                int bit = button & (1 << i);
-                copy_to_modify[i] += (bit != 0);
-            }
-
-            if (! is_unrecoverable_joltage(copy_to_modify))
-            {
-                new_joltage.emplace_back(std::move(copy_to_modify));
-            }
-        });
-    }
-
-    [[nodiscard]] bool is_unrecoverable_joltage(const std::vector<int>& joltage) const
-    {
-        if (joltage.size() != joltage_goal.size()) throw std::invalid_argument("Joltage vector sizes mismatch");
-
-        for (int i = 0; i < joltage.size(); i++)
-        {
-            if (joltage.at(i) > joltage_goal.at(i)) return true;
-        }
-
-        return false;
-    }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Machine& m)
@@ -132,47 +98,46 @@ CLASS_DEF(DAY) {
 
     static int steps_to_get_joltage(const Machine& m)
     {
-        using Steps_Jolts_t = std::pair<int, std::vector<int>>;
-        std::vector<Steps_Jolts_t> known_states;
-        std::queue<Steps_Jolts_t> work;
-        work.emplace(0, std::vector<int>(m.joltage_goal.size()));
+        // Given: Each button is a matrix of booleans.
+        // We need to solve for a * A + b * B + c * C + ... = Joltage, while minimizing sum(a,b,c,...)
+        // One way to do this is to use Z3, but let's try to do without it for now.
 
-        int depth = 1;
-        while (! work.empty())
-        {
-            auto [steps, jvec] = std::move(work.front());
-            if (steps > depth)
-            {
-                std::cout << steps << "\n";
-                depth = steps;
-            }
-            work.pop();
-            std::vector<std::vector<int>> neo;
-            m.get_possible_joltages(jvec, neo);
+        // Given: B x N matrix (boolean) configuration of the button. Example:
+        // g: 4 b: ( 5 9 24 27 7 22 ) j: ( 63 35 32 49 36 )
+        //
+        // The outputs of the button are on the VERTICAL axis if it is the LEFT matrix.
+        //
+        // [ 1 1 0 1 1 0 ]    [ A ]   [ 63 ]
+        // [ 0 0 0 1 1 1 ]    [ B ]   [ 35 ]
+        // [ 1 0 0 0 1 1 ]  x [ C ] = [ 32 ]
+        // [ 0 1 1 1 0 0 ]    [ D ]   [ 49 ]
+        // [ 0 0 1 1 0 1 ]    [ E ]   [ 36 ]
+        //                    [ F ]
 
-            for (auto& nj : neo)
-            {
-                if (nj == m.joltage_goal) return steps + 1;
+        // Let's say we pushed button one (A, 5) 10 times, and nothing else.
+        // [ 1 1 0 1 1 0 ]    [ 10]   [ 1 * 10 ]
+        // [ 0 0 0 1 1 1 ]    [ 0 ]   [ 0 * 10 ]
+        // [ 1 0 0 0 1 1 ]  x [ 0 ] = [ 1 * 10 ]
+        // [ 0 1 1 1 0 0 ]    [ 0 ]   [ 0 * 10 ]
+        // [ 0 0 1 1 0 1 ]    [ 0 ]   [ 0 * 10 ]
+        //                    [ 0 ]
 
-                // check if this is a known state.
-                bool known = false;
-                for (const auto& [_, known_jolt] : known_states)
-                {
-                    if (nj == known_jolt)
-                    {
-                        known = true;
-                        break;
-                    }
-                }
-                if (! known)
-                {
-                    known_states.emplace_back(steps + 1, nj);
-                    work.emplace(steps + 1, nj);
-                }
-            }
-        }
+        // Let's say that also the E button was pushed once.
+        // [ 1 1 0 1 1 0 ]    [ 10]   [ 1 * 10 + 1 * 1 ]   [ 11 ]
+        // [ 0 0 0 1 1 1 ]    [ 0 ]   [ 0 * 10 + 1 * 1 ]   [  1 ]
+        // [ 1 0 0 0 1 1 ]  x [ 0 ] = [ 1 * 10 + 1 * 1 ] = [ 11 ]
+        // [ 0 1 1 1 0 0 ]    [ 0 ]   [ 0 * 10 + 0 * 1 ]   [  0 ]
+        // [ 0 0 1 1 0 1 ]    [ 1 ]   [ 0 * 10 + 0 * 1 ]   [  0 ]
+        //                    [ 0 ]
 
-        throw std::invalid_argument("Joltage goal unreachable");
+        // OK, but how does a computer solve such an equation system?
+        // I M = A^-1 B
+        // compute A^T(AAT^1) to get A^-1 (A is not square)
+        // multiply on the right with B to get a 6x1 vector with the answer
+        // But remember we are also optimising for minimal...
+
+
+        return 0;
     }
 
     static int steps_to_get_state(const Machine& m)
