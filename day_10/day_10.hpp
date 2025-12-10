@@ -210,7 +210,6 @@ CLASS_DEF(DAY) {
         std::getline(scan, line); // '(objectives'
         std::getline(scan, line); // '((+ {V_list}) {answer})
         std::istringstream line_scan(line);
-        std::cout << result << "\n";
         while (line_scan.get() != ')') {}
         int answer;
         line_scan >> answer; // Of the shape: " \d+\)"
@@ -256,7 +255,7 @@ CLASS_DEF(DAY) {
         for (const auto& m : machines)
         {
             int v = steps_to_get_state(m);
-            std::cout << "solved " << m << " in " << v << " steps\n";
+            // std::cout << "solved " << m << " in " << v << " steps\n";
             total += v;
         }
 
@@ -268,7 +267,7 @@ CLASS_DEF(DAY) {
         for (const auto& m : machines)
         {
             int v = steps_to_get_joltage(m);
-            std::cout << "solved " << m << " in " << v << " steps\n";
+            // std::cout << "solved " << m << " in " << v << " steps\n";
             total += v;
         }
 
