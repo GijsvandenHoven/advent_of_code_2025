@@ -135,9 +135,88 @@ CLASS_DEF(DAY) {
         // compute A^T(AAT^1) to get A^-1 (A is not square)
         // multiply on the right with B to get a 6x1 vector with the answer
         // But remember we are also optimising for minimal...
+        // Yeah, let's use Z3. F*CK THIS. Numpy doesn't even like it because the matrix is not square.
 
 
-        return 0;
+        // Smaller instance from puzzle example
+        // g: 6 b: ( 8 10 4 12 5 3 ) j: ( 3 5 4 7 )
+        // Given: solution is [ 1 3 0 3 1 2 ]
+        //
+        // [ 0 0 0 0 1 1 ]   [ 1 ]   [ 1 + 2     ]   3
+        // [ 0 1 0 0 0 1 ] x [ 3 ] = [ 3 + 2     ] = 5
+        // [ 0 0 1 1 1 0 ]   [ 0 ]   [ 3 + 1     ]   4
+        // [ 1 1 0 1 0 0 ]   [ 3 ]   [ 1 + 3 + 3 ]   7
+        //                   [ 1 ]
+        //                   [ 2 ]
+
+        // define bits * buttons constants
+        // define jolts.size() variables
+        // constrain the sum of {buttons} products between const and variable to the jolt value of the index.
+        // minimize for the sum of the variables.
+        std::ofstream smt2("d10_z3.txt");
+
+        const char var_base = 'A';
+        std::vector<char> variables;
+        for (int i = 0; i < m.togglers.size(); ++i)
+        {
+            variables.push_back(static_cast<char>(var_base + i));
+            smt2 << "(declare-const " << variables.back() << " Int)\n";
+        }
+
+        smt2 << "\n";
+        // main assertion. All variables > 0 and (the rules of the matrix multiplication on new lines)
+        smt2 << "(assert (and";
+        std::ranges::for_each(variables, [&smt2](char V) { smt2 << " (>= " << V << " 0)"; });
+        // For every jolter, there is a dot product output.
+        for (int bit_shift = 0; bit_shift < m.joltage_goal.size(); ++bit_shift)
+        {
+            smt2 << "\n\t(= " << m.joltage_goal.at(bit_shift) << " (+";
+            for (int i = 0; i < variables.size(); ++i)
+            {
+                const auto& corresponding_button = m.togglers.at(i);
+                bool contributes_to_joltage = (corresponding_button & (1 << bit_shift)) != 0;
+                smt2 << " (* " << variables.at(i) << " " << contributes_to_joltage << ")";
+            }
+            smt2 << "))"; // close the sum and the equality.
+        }
+
+        smt2 << "\n))"; // closure of (assert (and ...
+        smt2 << "\n(minimize (+";
+        std::ranges::for_each(variables, [&smt2](char V) { smt2 << " " << V; });
+        smt2 << "))\n\n"; //terminate sum and minimize
+        smt2 << "(check-sat)\n(get-objectives)\n(get-model)";
+
+        smt2.close();
+
+        // yoinked from my 2024 AOC. Nice.
+        std::array<char, 128> buffer {};
+        std::string result;
+        std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("z3 -smt2 d10_z3.txt", "r"), pclose);
+        if (!pipe) {
+            throw std::runtime_error("popen() failed!");
+        }
+        while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr) {
+            result += buffer.data();
+        }
+
+        if (! result.starts_with("sat"))
+        {
+            throw std::logic_error("Unsatisfiable problem");
+        }
+
+        std::istringstream scan(result);
+        std::string line;
+        std::getline(scan, line); // 'sat'
+        std::getline(scan, line); // '(objectives'
+        std::getline(scan, line); // '((+ {V_list}) {answer})
+        std::istringstream line_scan(line);
+        std::cout << result << "\n";
+        while (line_scan.get() != ')') {}
+        int answer;
+        line_scan >> answer; // Of the shape: " \d+\)"
+
+
+        return answer;
     }
 
     static int steps_to_get_state(const Machine& m)

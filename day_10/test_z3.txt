@@ -1,0 +1,18 @@
+(declare-const A Int)
+(declare-const B Int)
+(declare-const C Int)
+(declare-const D Int)
+(declare-const E Int)
+(declare-const F Int)
+
+(assert (and (>= A 0) (>= B 0) (>= C 0) (>= D 0) (>= E 0) (>= F 0)
+   (= 3 (+ (* 0 A) (* 0 B) (* 0 C) (* 0 D) (* 1 E) (* 1 F)))
+   (= 5 (+ (* 0 A) (* 1 B) (* 0 C) (* 0 D) (* 0 E) (* 1 F)))
+   (= 4 (+ (* 0 A) (* 0 B) (* 1 C) (* 1 D) (* 1 E) (* 0 F)))
+   (= 7 (+ (* 1 A) (* 1 B) (* 0 C) (* 1 D) (* 0 E) (* 0 F)))
+))
+
+(minimize (+ A B C D E F))
+(check-sat)
+(get-objectives)
+(get-model)
